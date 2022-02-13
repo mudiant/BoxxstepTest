@@ -1,0 +1,36 @@
+{
+  "Version": 1,
+  "ProjectMap": {
+    "1853de07-1f2d-4ea1-8429-810897ee2040": {
+      "ProjectGuid": "1853de07-1f2d-4ea1-8429-810897ee2040",
+      "DisplayName": "BoxxstepTest",
+      "ColorIndex": 0
+    },
+    "0d64d78d-e5e6-4cbc-b430-d63ce0e5f0da": {
+      "ProjectGuid": "0d64d78d-e5e6-4cbc-b430-d63ce0e5f0da",
+      "DisplayName": "Web",
+      "ColorIndex": 1
+    },
+    "a39b9101-7c6d-4aca-91e2-0847b88840fe": {
+      "ProjectGuid": "a39b9101-7c6d-4aca-91e2-0847b88840fe",
+      "DisplayName": "BoxxstepTest.Web",
+      "ColorIndex": 2
+    },
+    "a2fe74e1-b743-11d0-ae1a-00a0c90fffc3": {
+      "ProjectGuid": "a2fe74e1-b743-11d0-ae1a-00a0c90fffc3",
+      "DisplayName": "Miscellaneous Files",
+      "ColorIndex": -1
+    },
+    "c9825e1f-da2d-411a-b435-e0fc30ecc197": {
+      "ProjectGuid": "c9825e1f-da2d-411a-b435-e0fc30ecc197",
+      "DisplayName": "BoxxstepTest.Service",
+      "ColorIndex": 3
+    },
+    "78cc2829-93c4-46dc-832b-f4e5fc728d78": {
+      "ProjectGuid": "78cc2829-93c4-46dc-832b-f4e5fc728d78",
+      "DisplayName": "BoxxstepTest.Repository",
+      "ColorIndex": 4
+    }
+  },
+  "NextColorIndex": 5
+}

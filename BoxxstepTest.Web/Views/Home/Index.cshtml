@@ -1,0 +1,277 @@
+﻿@{
+    ViewData["Title"] = "Boxxstep Test";
+}
+
+<button type="button" class="btn btn-primary" onclick="openAddModal()">Add Contact</button>
+<div id="contactdiagram" style="width: 1300px; height: 1024px; border-style: dotted; border-width: 1px;"></div>
+
+<div class="modal" tabindex="-1" role="dialog" id="modalAdd" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Contact</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="frmContact">
+                    <div class="form-group add-new">
+                        <label for="txtFirstName">First Name</label>
+                        <input type="text" class="form-control" id="txtFirstName" placeholder="First Name">
+                    </div>
+                    <div class="form-group add-new">
+                        <label for="txtLastName">Last Name</label>
+                        <input type="text" class="form-control" id="txtLastName" placeholder="First Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="ddlParent">Report To</label>
+                        <select id="ddlParent" class="form-control"></select>
+                    </div>                   
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="saveContact()">Save</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" tabindex="-1" role="dialog" id="modalEdit" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Contact</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="frmReportTo">
+                    <div class="form-group">
+                        <label for="ddlReportTo">Report To</label>
+                        <select id="ddlReportTo" class="form-control"></select>
+                    </div>
+                    <input type="hidden" id="hdnContactId" value="0" />
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="updateRelation()">Save</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+
+    <script type='text/javascript'>
+        var control;
+        var items = [];
+
+        function initPrimitives() {
+            var options = new primitives.FamConfig();
+            items = [];
+            options.items = items;
+            options.cursorItem = 0;
+            options.buttonsPanelSize = 36;
+            options.hasButtons = primitives.Enabled.True;
+            options.hasSelectorCheckbox = primitives.Enabled.False;
+            //options.leavesPlacementType = primitives.ChildrenPlacementType.Matrix;
+            options.pageFitMode = primitives.PageFitMode.None;
+            options.onButtonsRender = function (data) {
+                var itemConfig = data.context;
+                var element = data.element;
+                element.innerHTML = "";
+                element.appendChild(primitives.JsonML.toHTML(["div",
+                    {
+                        class: "btn-group-vertical btn-group-sm"
+                    },                    
+                    ["button",
+                        {
+                            "type": "button",
+                            "data-buttonname": "edit",
+                            "class": "btn btn-light"
+                        },
+                        ["i", { "class": "fa fa-user-edit" }]
+                    ]
+                ]));
+            };
+            options.onButtonClick = function (e, data) {
+                switch (data.name) {                    
+                    case "edit":                       
+                        //console.log('----edit----');                      
+                        if (!data.parentItems.length) {
+                            alert("Root item can not be reported to anyone!");
+                            return;
+                        }
+                        openEditModal(data.context, data.parentItems);
+                        break;
+                }
+            };
+            control = primitives.FamDiagram(document.getElementById("contactdiagram"), options);
+        }
+
+        function getItemsForReportTo(items, parentItems, selectedItem) {
+            var children = {},
+                result = {},
+                index, len, item;
+            var root = items.find(x => x.parents === null);
+            children[null] = [];
+            children[null].push(root);
+            
+            for (index = 0, len = items.length; index < len; index += 1) {
+                var item = items[index];               
+                if (item.parents && item.parents.length) {
+                    item.parents.forEach((parent) => {
+                        if (children[parent] == null) {
+                            children[parent] = [];
+                        }
+                        children[parent].push(item);
+                    });
+                }
+            }           
+            parentItems.forEach((parentItem) => {                
+                var newChildren = children[parentItem.id];                
+                if (newChildren != null) {
+                    while (newChildren.length > 0) {
+                       
+                        for (var index = 0; index < newChildren.length; index++) {
+                            var item = newChildren[index];
+                            if (item == selectedItem || selectedItem.parents.includes(item.id)) continue;
+                            result[item.id] = item;
+                        }
+                        newChildren = [];
+                    }
+                }
+            });
+            for (var parent in children) {
+                if (!parentItems.includes(parent)) {
+                    var newChildren = children[parent];
+                    if (newChildren != null) {
+                        while (newChildren.length > 0) {                          
+                            for (var index = 0; index < newChildren.length; index++) {
+                                var item = newChildren[index];
+                                if (item == selectedItem || (item.parents && item.parents.includes(selectedItem.id)) || selectedItem.parents.includes(item.id)) continue;
+                                result[item.id] = item;
+                            }
+                            newChildren = [];
+                        }
+                    }
+
+                }
+            }           
+            return result;
+        };
+
+        function createObject() {
+            var contact = {};
+            contact.FirstName = $('#txtFirstName').val();
+            contact.LastName = $('#txtLastName').val();
+            contact.Relations = $('#ddlParent').val();
+            return contact;
+        }
+
+        function clearForm() {
+            $('#txtFirstName').val('');
+            $('#txtLastName').val('');
+            $('#ddlParent').val('');
+        }
+
+        function openAddModal() {           
+            var items = control.getOption("items");          
+            bindReportToDropdown($('#ddlParent'), items);
+            $('#modalAdd').modal('show');
+        }
+
+        function saveContact() {
+            $.post('saveContact', { contact: createObject() }, function (data, sta, res) {
+                if (res.status === 200 && data !== null) {
+                    setOrgItem(data);
+                    clearForm();
+                    $('#modalAdd').modal('hide');
+                }
+            });
+        }
+
+        function openEditModal(item, parents) {         
+            $('#hdnContactId').val(item.id);
+            var items = control.getOption("items");
+            var list = items;
+            if (parent) {
+                list = getItemsForReportTo(items, parents, item);
+            }
+            bindReportToDropdown($('#ddlReportTo'), list);
+            $('#modalEdit').modal('show');
+        }
+
+        function updateRelation() {
+            if ($('#ddlReportTo').val() == '') {
+                alert('Please select realtionship');
+                return;
+            }
+            $.post('updateRelation', { contactId: $('#hdnContactId').val(), parentId: $('#ddlReportTo').val() }, function (data, sta, res) {
+                if (res.status === 200 && data !== null) {                   
+                    var items = control.getOption("items");                   
+                    var index = items.findIndex(x => x.id == $('#hdnContactId').val());
+                    if (index > -1) {
+                        items[index].parents = getParents(data);                       
+                        control.setOptions({
+                            items: items
+                        });
+                        control.update(primitives.UpdateMode.Refresh);
+                    }
+                    $('#modalEdit').modal('hide');
+                }
+            });
+        }
+
+        
+        function getParents(data) {
+            return data.relations !== null ? data.relations.split(',').map(function (item) {
+                return parseInt(item);
+            }) : null
+        }
+
+        function setOrgItem(data) {
+            var items = control.getOption("items");
+            var newItem = new primitives.OrgItemConfig({
+                id: data.id,
+                parents: getParents(data),
+                title: data.firstName + ' ' + data.lastName,
+                image: "/img/avatar.png",
+                firstName: data.firstName,
+                lastName: data.lastName,
+            });
+            items.push(newItem);
+            control.setOptions({
+                items: items,
+                cursorItem: newItem.id
+            });
+            control.update(primitives.UpdateMode.Refresh);
+        }
+        function getContacts() {
+            $.get('getContacts', {}, function (data, sta, res) {
+                if (res.status === 200 && data !== null) {
+                    data.forEach((item) => {
+                        setOrgItem(item);
+                    });
+                    if (data.length === 0) { openAddModal(0, false); }
+                }
+            });
+        }
+
+        function bindReportToDropdown(ele, items) {           
+            $(ele).html('');
+            $(ele).append($('<option>').text('-- Select --').attr('value', ''));
+            for (var prop in items) {
+                $(ele).append('<option value="' + items[prop].id + '">' + items[prop].title + '</option>');
+            }           
+        }
+        $(document).ready(() => {
+            initPrimitives();
+            getContacts();
+        });
+    </script>
+}
